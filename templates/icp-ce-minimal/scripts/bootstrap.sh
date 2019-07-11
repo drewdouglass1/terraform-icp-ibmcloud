@@ -12,9 +12,15 @@ ubuntu_install(){
     python-yaml \
     thin-provisioning-tools \
     nfs-client \
+    glusterfs-client \
     lvm2; do
     sleep 2
   done
+
+  # added for glusterfs support
+  echo "Adding dm_thin_pool setting"
+  sudo modprobe dm_thin_pool
+  echo dm_thin_pool | sudo tee -a /etc/modules
 }
 
 crlinux_install() {
@@ -28,7 +34,24 @@ crlinux_install() {
     iptables \
     device-mapper-persistent-data \
     nfs-util \
+    glusterfs-client \
     lvm2
+
+  # added for glusterfs support
+    echo "Adding dm_thin_pool setting"
+    sudo modprobe dm_thin_pool
+    echo dm_thin_pool | sudo tee -a /etc/modules-load.d/dm_thin_pool.conf
+
+    echo "Setting up Disks for GlusterFS"
+
+    extradisk=`udevadm info --root --name=/dev/xvde | grep -P DEVPATH | cut -d '=' -f2`
+
+    echo ENV{DEVTYPE}==\"disk\", ENV{SUBSYSTEM}==\"block\", ENV{DEVPATH}==\"${extradisk}\" SYMLINK+=\"disk/gluster-disk-1\" | sudo tee -a /lib/udev/rules.d/10-custom-icp.rules
+    
+    cat /lib/udev/rules.d/10-custom-icp.rules
+
+    udevadm control --reload-rules
+    udevadm trigger --type=devices --action=change
 }
 
 docker_install() {

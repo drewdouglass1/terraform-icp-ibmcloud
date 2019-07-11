@@ -16,3 +16,4 @@ logs/*.*
 # For mac users
 .history
 .DS_Store
+.vscode/settings.json
