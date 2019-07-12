@@ -6,12 +6,17 @@ module "icpprovision" {
 
     # Provide IP addresses for boot, master, mgmt, va, proxy and workers
     boot-node = "${ibm_compute_vm_instance.icp-master.ipv4_address}"
-    icp-host-groups = {
-        master = ["${ibm_compute_vm_instance.icp-master.*.ipv4_address}"]
-        proxy = ["${ibm_compute_vm_instance.icp-proxy.*.ipv4_address}"]
-        worker = ["${ibm_compute_vm_instance.icp-worker.*.ipv4_address}"]
-        management = ["${ibm_compute_vm_instance.icp-mgmt.*.ipv4_address}"]
-        va = ["${ibm_compute_vm_instance.icp-va.*.ipv4_address}"]
+
+    # Updated in cases where ICP EE is being installed with multiple proxy or master nodes, but no load balancer so using public IP addresses
+        icp-host-groups = {
+        master = ["${ibm_compute_vm_instance.icp-master.*.ipv4_address_public}"]
+        proxy = "${slice(concat(ibm_compute_vm_instance.icp-proxy.*.ipv4_address_public,
+                                ibm_compute_vm_instance.icp-master.*.ipv4_address_public),
+                         var.proxy["nodes"] > 0 ? 0 : length(ibm_compute_vm_instance.icp-proxy.*.ipv4_address_public),
+                         var.proxy["nodes"] > 0 ? length(ibm_compute_vm_instance.icp-proxy.*.ipv4_address_public) :
+                                                  length(ibm_compute_vm_instance.icp-proxy.*.ipv4_address_public) +
+                                                  length(ibm_compute_vm_instance.icp-master.*.ipv4_address_public))}"
+        worker = ["${ibm_compute_vm_instance.icp-worker.*.ipv4_address_public}"]
     }
 
     # Provide desired ICP version to provision
